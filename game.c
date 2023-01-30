@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdbool.h>
+
+#include "extra.c"
  
 
 #define MAX_NAME 100 
@@ -19,6 +21,8 @@
 
 static int CURRENT_PLACE = 0;
 static char op[10];
+static char ** input;
+static int argsC;
 
 /**
  * Struct que representa as armas e objectos carregados pelos jogadores
@@ -83,16 +87,18 @@ void initializePlayer( struct Player *player );
 void initializeMap( );
 void initializeEnemy( struct Enemy enemy[] );
 void initializeObjects( struct Object objects[] );
+char ** getInput( char *argv[] );
 
-int main(){
-
+int main( int argc, char *argv[] ){
 
     
+    input = getInput( argv );
+    argsC = argc;
+
     struct Enemy enemy[2];
     struct Player player;
     struct Object objects[3];
-
-    
+        
     initializePlayer( &player );
     initializeMap( );
     initializeObjects( objects );
@@ -125,25 +131,39 @@ int main(){
      pthread_join( thread2, NULL); 
      pthread_join( t_giant, NULL);
 	 
-     //printf("Thread 1 terminou\n");
-     //printf("Thread 2 terminou\n");
 	 
      return 0;
+}
+
+void getCommands(){
+    printf("ir para Norte(n), Sul(s), Leste(l), Oeste(o), Cima(c), Baixo(b)\n");
+    printf("Procurar Tesouro (p)\n");
+    printf("Atacar (a)\n");
 }
 
 
 // todo metodo para procurar tesouro e verificar se está na mesma sala que o player
 
 
-void initializePlayer( struct Player *player){
+void initializePlayer( struct Player *player ){
 
-    printf( "Bem vindo Player Insira o seu nome:");
+    printf( "Bem vindo Player Insira o seu nome:\n");
     scanf( "%s", player->name);
-    
-    player->energy = INITIAL_PLAYER_ENERGY; // energy player
+    // super mode
+    player->energy = INITIAL_PLAYER_ENERGY;
     player->map = INITIAL_PLAYER_map;
     player->object = NO_OBJECT;
     player->treasure = NO_TREASURE; 
+    
+    if ( argsC == 5){
+    player->energy = atoi(input[1]); // energy player choosen in super mode
+    // place choosen in super mode
+    player->map = atoi(input[2]);
+    // current place tem que receber a posição escolhida em super modo
+    CURRENT_PLACE = atoi(input[2]) - 1; 
+    // object choosen in super mode
+    player->object = atoi(input[3]);  
+    }
 }
 
 void initializeObjects( struct Object object[]){
@@ -300,8 +320,8 @@ void initializeEnemy (struct Enemy enemy[])
     strcpy( enemy[0].name, "Fumaca" );
     strcpy( enemy[1].name, "Gigante" );
 
-    enemy[0].energy = 50;
-    enemy[1].energy = 100;
+    enemy[0].energy = 100;
+    enemy[1].energy = 250;
 
     enemy[0].power = 5;
     enemy[1].power = 15;
@@ -310,17 +330,10 @@ void initializeEnemy (struct Enemy enemy[])
     enemy[1].map = 16;
 }
 
-void getCommands(){
-    printf("ir para Norte(n), Sul(s), Leste(l), Oeste(o), Cima(c), Baixo(b)\n");
-    printf("Procurar Tesouro (p)\n");
-    printf("Atacar (a)\n");
-}
 
 void chooseThePath(  ){
     // usar o x para marcar a posição atual do jogador
-        // verifica se a direção escolhida pelo player está disponível
-        
-
+        // verifica se a direção escolhida pelo player está disponívels
 
         if ( strcmp(op, "n") == 0  && map[CURRENT_PLACE].north != -1){
             printf("Porta ao Norte Entrando...\n");
@@ -364,14 +377,19 @@ void chooseThePath(  ){
 
 // Todo metodo para fazer player lutar com o Monstro
 
-void fight( struct data *d ){
-    int restLife = d->enemy[0].energy - d->objects[0].power;
-    d->enemy[0].energy = restLife;
-    printf("%d\n", d->enemy[0].energy);
+void fight( struct data *d, int e ){
+    int restLife = d->enemy[e].energy - d->objects[e].power;
+    d->enemy[e].energy = restLife;
+    printf("%d\n", d->enemy[e].energy);
 
-    if ( restLife >= 22 && restLife <= 27){
-        printf("O Monstro Fugiu!\n");
-        d->enemy[0].map = 7;
+        if ( restLife >= 22 && restLife <= 27){
+            printf("O Monstro Fugiu!\n");
+            if ( e == 0){
+                d->enemy[e].map = (d->player.map - d->enemy[e].map) + 1; // manda o monstro 1 para a primeira sala
+        }
+            else if ( e == 1) { 
+                d->enemy[e].map = (d->player.map - d->enemy[e].map) + 9; // manda o monstro 2 para a primeira sala
+        }
     }
 }
 
@@ -420,20 +438,22 @@ void searchTreasure( struct data *d ){
 
 void  *thread1_player( void *ptr )
 { 
-    bool samePlace = false; // variavel que diz se jogadores estão na mesma sala
+    bool diffPlace = false; // variavel que diz se jogadores estão na mesma sala
     struct data *d = (struct data*)ptr; // struct que contem os valores do monstro e do Player
     
-    samePlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;
+    diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;
     
-    if ( samePlace ){
+    if ( diffPlace ){
     printf("\n%s", map[CURRENT_PLACE].description);
     printf("\n%s\n", map[CURRENT_PLACE].info); 
     }
 
-    while( strcmp(op, "q") != 0 && samePlace){ 
+    while( strcmp(op, "q") != 0 ){ 
         
-        scanf("%s", op );
-        if ( strcmp(op, "a") != 0){
+        diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;
+        
+        scanf( "%s", op );
+        if ( strcmp(op, "a") != 0 && diffPlace ){
             chooseThePath( );
             printf("\n%s", map[CURRENT_PLACE].description);
             printf("\n%s\n", map[CURRENT_PLACE].info);
@@ -449,11 +469,19 @@ void  *thread1_player( void *ptr )
         }
 
         if ( strcmp(op, "a") == 0 ){
-            while ( d->player.map == d->enemy[0].map ){ // para permanecer na luta enquanto houver a condição satisfeita
+            while ( !diffPlace  ){ // para permanecer na luta enquanto houver a condição satisfeita
+                
                 printf("Atacar (a)\n");
                 scanf("%s", op );
-                if ( strcmp(op, "a") == 0 )
-                fight( d );
+                
+                if ( strcmp(op, "a") == 0 ){
+                    if ( d->player.map == d->enemy[0].map ){ fight( d, 0 ); }
+                    
+                    else if ( d->player.map == d->enemy[1].map ) { fight( d, 1 ); }
+                    
+                }
+                diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map; 
+        
             }
         }
     }
