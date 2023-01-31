@@ -9,7 +9,7 @@
  
 
 #define MAX_NAME 100 
-#define INITIAL_PLAYER_ENERGY 50
+#define INITIAL_PLAYER_ENERGY 60
 #define INITIAL_PLAYER_map 0
 #define NO_OBJECT -1
 #define NO_TREASURE -1
@@ -39,6 +39,7 @@ struct Enemy{
     int energy;
     int power;
     int map;
+    bool alive;
 };
 /**
  * Struct que representa O player do jogo
@@ -328,6 +329,10 @@ void initializeEnemy (struct Enemy enemy[])
 
     enemy[0].map = 6;
     enemy[1].map = 16;
+
+    enemy[0].alive = true;
+    enemy[1].alive = true;
+
 }
 
 
@@ -380,7 +385,14 @@ void chooseThePath(  ){
 void fight( struct data *d, int e ){
     int restLife = d->enemy[e].energy - d->objects[e].power;
     d->enemy[e].energy = restLife;
-    printf("%d\n", d->enemy[e].energy);
+    
+    if ( d->enemy[e].energy > 0 ){ printf("Energia do Monstro: %d\n", d->enemy[e].energy); }
+    else {
+        printf( "O Monstro Morreu\n" );
+        printf("\n%s", map[CURRENT_PLACE].description);
+        printf("\n%s\n", map[CURRENT_PLACE].info); 
+    }
+    
 
         if ( restLife >= 22 && restLife <= 27){
             printf("O Monstro Fugiu!\n");
@@ -391,6 +403,11 @@ void fight( struct data *d, int e ){
                 d->enemy[e].map = (d->player.map - d->enemy[e].map) + 9; // manda o monstro 2 para a primeira sala
         }
     }
+
+        if ( d->enemy[e].energy <= 0 ){
+            d->enemy[e].alive = false;
+        }
+ 
 }
 
 // Todo metodo para fazer o Monstro Atacar
@@ -402,7 +419,7 @@ void enemyAttack( struct data *d, int e ){
     printf("O Monstro %s deu um golpe\n", d->enemy[e].name);
     sleep(2);
     
-        if ( d->player.energy == 0){
+        if ( d->player.energy <= 0){
             printf("O Monstro tirou a sua vida!\n");
             printf("Fim de Jogo!");
             strcpy(op, "q");
@@ -436,7 +453,7 @@ void searchTreasure( struct data *d ){
 }
 
 
-void  *thread1_player( void *ptr )
+void * thread1_player( void *ptr )
 { 
     bool diffPlace = false; // variavel que diz se jogadores estão na mesma sala
     struct data *d = (struct data*)ptr; // struct que contem os valores do monstro e do Player
@@ -450,10 +467,11 @@ void  *thread1_player( void *ptr )
 
     while( strcmp(op, "q") != 0 ){ 
         
+        scanf( "%s", op );
+        
         diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;
         
-        scanf( "%s", op );
-        if ( strcmp(op, "a") != 0 && diffPlace ){
+        if ( diffPlace ){
             chooseThePath( );
             printf("\n%s", map[CURRENT_PLACE].description);
             printf("\n%s\n", map[CURRENT_PLACE].info);
@@ -471,16 +489,16 @@ void  *thread1_player( void *ptr )
         if ( strcmp(op, "a") == 0 ){
             while ( !diffPlace  ){ // para permanecer na luta enquanto houver a condição satisfeita
                 
-                printf("Atacar (a)\n");
-                scanf("%s", op );
+                if ( d->enemy[1].alive ){ scanf("%s", op ); } //####################################//
+                
                 
                 if ( strcmp(op, "a") == 0 ){
-                    if ( d->player.map == d->enemy[0].map ){ fight( d, 0 ); }
+                    if ( d->player.map == d->enemy[0].map && d->enemy[0].alive ){ fight( d, 0 ); }
                     
-                    else if ( d->player.map == d->enemy[1].map ) { fight( d, 1 ); }
+                    else if ( d->player.map == d->enemy[1].map && d->enemy[1].alive ) { fight( d, 1 ); }
                     
                 }
-                diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map; 
+                diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;  
         
             }
         }
@@ -493,12 +511,12 @@ void *thread_giant( void *ptr ){
     struct data *d = (struct data*)ptr;
     int gPos;
      
-     while(strcmp(op, "q") != 0){
+     while( d->enemy[0].alive ){
         gPos = rand() % 9 + 8;
         d->enemy[1].map = gPos;
         //printf("O Monstro %s esta na sala %d\n", d->enemy[1].name, d->enemy[1].map);
-        if ( d->player.map == d->enemy[1].map ){
-        printf("Se encontraram! Ewee\n");
+        if ( d->player.map == d->enemy[1].map && d->enemy[1].energy > 0){
+        printf("Se encontraram!\n");
         enemyAttack( d, 1 );
         }
         sleep( 4 );
@@ -507,17 +525,19 @@ void *thread_giant( void *ptr ){
 
 void  *thread_smoke( void *ptr )
 {
+    // variavel que mostra se o monstro está vivo ou não
+    bool smoke_alive = true;
     struct data *d = (struct data*)ptr;
     int pos;
 	
-    while(strcmp(op, "q") != 0){
+    while( d->enemy[1].alive ){
 
-     pos = rand() % 8 + 1;
+     pos = rand() % 8 + 1; // posição do monstro
      d->enemy[0].map = pos;
      
      //printf("O Monstro %s esta na sala %d\n", d->enemy[0].name, d->enemy[0].map);
-     if ( d->player.map == d->enemy[0].map ){
-        printf("Se encontraram! Ewee");
+     if ( d->player.map == d->enemy[0].map && d->enemy[0].energy > 0 ){
+        printf("Se encontraram!\n");
         enemyAttack( d, 0 );
      }
      sleep( 2 );  
