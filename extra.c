@@ -10,9 +10,6 @@
 
 char ** getInput( char *argv[] ){
 
-  //printf("%s %s %s %s", argv[1], argv[2], argv[3], argv[4]);
-
-  
   static char * input[4][4];
 
   input[0][0] = (char*) argv[1]; // supercode

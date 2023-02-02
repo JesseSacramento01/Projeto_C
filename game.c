@@ -18,6 +18,7 @@
 #define NO_WAY -1
 #define N_WEAPONS 5
 #define N_OF_ENEMIES 3
+#define MAXLIN 100
 
 static int CURRENT_PLACE = 0;
 static char op[10];
@@ -71,7 +72,9 @@ struct map{
     char info[MAX_NAME];
 
 };
-
+/**
+ * struc data contém as estruturas Player, Enemy, e Object
+*/
 struct data{
     struct Player player;
     struct Enemy enemy[2];
@@ -85,10 +88,13 @@ void *thread1_player( void *ptr );
 void *thread_smoke( void *ptr );
 void *thread_giant( void *ptr );
 void initializePlayer( struct Player *player );
-void initializeMap( );
+void initializeMap( int j, int i, int inf );
 void initializeEnemy( struct Enemy enemy[] );
 void initializeObjects( struct Object objects[] );
 char ** getInput( char *argv[] );
+void mapsInfo( );
+void setDescriptions();
+
 
 int main( int argc, char *argv[] ){
 
@@ -101,12 +107,15 @@ int main( int argc, char *argv[] ){
     struct Object objects[3];
         
     initializePlayer( &player );
-    initializeMap( );
+    mapsInfo();
     initializeObjects( objects );
     initializeEnemy( enemy );
+    setDescriptions();
+
+   
     
 
-    struct data d; // vai guardar os dados do player, e do enemy
+    struct data d; // vai guardar os dados do player, e do enemy e do object
     d.player = player;
 
     d.enemy[0] = enemy[0];
@@ -121,12 +130,12 @@ int main( int argc, char *argv[] ){
      
      strcpy(op, "" );
 
-     //criação de duas threads, cada um com a sua função
+     //criação de três threads, cada um com a sua função
      pthread_create( &thread1, NULL, thread1_player, (void*) &d);
      pthread_create( &thread2, NULL, thread_smoke, (void*) &d);
      pthread_create( &t_giant, NULL,  thread_giant, (void*) &d);
      
-
+     
      //espera pelo término de cada uma das threads
      pthread_join( thread1, NULL);
      pthread_join( thread2, NULL); 
@@ -142,10 +151,26 @@ void getCommands(){
     printf("Atacar (a)\n");
 }
 
+void setDescriptions( ){
 
-// todo metodo para procurar tesouro e verificar se está na mesma sala que o player
+  int index = 0;
+  FILE *f;
+  char l[MAXLIN;
+
+  f = fopen("descriptions.txt", "r");
+  while( fgets(l, MAXLIN, f) != NULL ){
+     
+    strcpy(map[index].description, l);
+    index++;
+  }
+
+  fclose(f);
+}
 
 
+/**
+ * recebe como parametro a struct do player, para inicializar os seus membros
+*/
 void initializePlayer( struct Player *player ){
 
     printf( "Bem vindo Player Insira o seu nome:\n");
@@ -167,6 +192,9 @@ void initializePlayer( struct Player *player ){
     }
 }
 
+/**
+ * recebe a struct Object como parametro para inicializar os membros
+*/
 void initializeObjects( struct Object object[]){
 
     strcpy(object[0].name, "Espada");
@@ -216,103 +244,80 @@ void setInfo( ){
 
 }
 
-void initializePath( )
-{
-    //Sala 1
-    map[0].north = 3;
-    map[0].south = 2; 
-    map[0].east =  4;
 
-    //Sala 2
-    map[1].north = 1;
+void mapsInfo(){
 
-    //Sala 3
-    map[2].south = 1;
-    map[2].object = 2;
+  FILE *file;
+    char fileName[] = "file.txt";
+    char w[2];
+    int n;
 
-    //Sala 4
-    map[3].north = 8;
-    map[3].west = 1;
-    map[3].east = 5;
+    int i = 1;
+    int j = 0;
 
-    //Sala 5
-    map[4].north = 6;
-    map[4].west = 4;
+    // Abrir o arquivo em modo de leitura
+    file = fopen(fileName, "r");
 
-    //Sala 6
-    map[5].south = 5;
-    map[5].west = 8;
-
-    //Sala 7
-    map[6].east = 8;
-    
-    //Sala 8
-    map[7].south = 4;
-    map[7].east = 6;
-    map[7].west = 7;
-    map[7].up = 9;
-
-    //Sala 9
-    map[8].down = 8;
-    map[8].south = 12;
-    map[8].east = 10;
-    map[8].west = 11;
-    map[8].object = 1;
-
-    //Sala 10
-    map[9].south = 13;
-    map[9].west = 9;
-
-    //Sala 11
-    map[10].south = 14;
-    map[10].east = 9;
-
-    //Sala 12
-    map[11].north = 9;
-    map[11].east = 13;
-    map[11].west = 15;
-    map[11].object = 0;
-
-    //Sala 13
-    map[12].north = 10;
-    map[12].west = 12;
-    map[12].treasure = 1;
-
-    //Sala 14
-    map[13].north = 11;
-    map[13].south = 15;
-
-    //Sala 15
-    map[14].south = 16;
-    map[14].east = 12;
-    map[14].north = 14;
-
-    //Sala 16
-    map[15].north = 15;
-}
-
-void initializeMap ( )
-{
-    for (int i = 0; i < 16; i++)
-    {
-        map[i].north = NO_WAY;
-        map[i].south = NO_WAY;
-        map[i].west = NO_WAY;
-        map[i].east = NO_WAY;
-        map[i].up = NO_WAY;
-        map[i].down = NO_WAY;
-        map[i].treasure = NO_TREASURE;
-        map[i].object = NO_OBJECT;
-        
-
-        char desc [25];
-        sprintf(desc, "Estas na sala %d\n", i+1);
-        strcpy(map[i].description, desc);
+    // Verificar se o arquivo foi aberto com sucesso
+    if (file == NULL) {
+        printf("Não foi possível abrir o arquivo.\n");
     }
 
-   initializePath( ); // para selecionar o caminho entre as diferentes salas 
-   setInfo( ); // para inserir as informações respectivas a cada sala
+    // Ler o arquivo caractere por caractere
+    while( fscanf( file, "%s", w ) != EOF ){
+        
+        initializeMap( i, j, atoi(w) );
+        
+        
+        if ( i == 8){
+            printf("%d\n", atoi(w)); 
+            j++;
+            i = 0;
+            printf("j: %d\n", j);
+    }  
+    i++;
+  }
 
+    // Fechar o arquivo
+    fclose(file);
+
+    setInfo( ); // para inserir as informações respectivas a as passagens nas salas
+    setDescriptions( ); // para inserir as descrições de cada sala no jogo
+
+   
+}
+
+void initializeMap ( int i, int j, int inf )
+{
+        switch (i)
+        {
+        case 1:
+            map[j].north = inf;
+            break;
+        case 2:
+            map[j].south = inf;
+            break;
+        case 3:
+            map[j].east = inf;
+            break;
+        case 4:
+            map[j].west = inf;
+            break; 
+        case 5:
+            map[j].up = inf;
+            break;
+        case 6:
+            map[j].down = inf;
+            break;
+        case 7:
+            map[j].treasure = inf;
+            break;
+        case 8:
+            map[j].object = inf;
+            break;
+        default:
+            break;
+        }
 };
 
 void initializeEnemy (struct Enemy enemy[])
@@ -335,7 +340,6 @@ void initializeEnemy (struct Enemy enemy[])
 
 }
 
-
 void chooseThePath(  ){
     // usar o x para marcar a posição atual do jogador
         // verifica se a direção escolhida pelo player está disponívels
@@ -346,8 +350,6 @@ void chooseThePath(  ){
             // Menos 1 por conta do indice, não existe sala 0
             CURRENT_PLACE = map[CURRENT_PLACE].north - 1;
             sleep(2);
-            printf("\n%s", map[CURRENT_PLACE].description);
-            printf("\n%s\n", map[CURRENT_PLACE].info);
         }
         else if ( strcmp(op, "s") == 0 && map[CURRENT_PLACE].south != -1){
             printf("Porta ao Sul Entrando...\n");
@@ -390,17 +392,19 @@ void fight( struct data *d, int e ){
     else {
         printf( "O Monstro Morreu\n" );
         printf("\n%s", map[CURRENT_PLACE].description);
-        printf("\n%s\n", map[CURRENT_PLACE].info); 
+        printf("\n%s\n", map[CURRENT_PLACE].info);
+      
     }
-    
-
         if ( restLife >= 22 && restLife <= 27){
             printf("O Monstro Fugiu!\n");
+            printf("\n%s", map[CURRENT_PLACE].description);
+            printf("\n%s\n", map[CURRENT_PLACE].info); 
+
             if ( e == 0){
-                d->enemy[e].map = (d->player.map - d->enemy[e].map) + 1; // manda o monstro 1 para a primeira sala
+                d->enemy[e].map = (d->player.map - d->enemy[e].map) + 3; // manda o monstro 1 para a terceira sala
         }
             else if ( e == 1) { 
-                d->enemy[e].map = (d->player.map - d->enemy[e].map) + 9; // manda o monstro 2 para a primeira sala
+                d->enemy[e].map = (d->player.map - d->enemy[e].map) + 10; // manda o monstro 2 para a segunda sala
         }
     }
 
@@ -430,8 +434,13 @@ void enemyAttack( struct data *d, int e ){
 
 // Todo metodo para verificar se há uma arma na sala
 
-void getWeapon(){
-
+void getWeapon( struct data d){
+    if ( map[CURRENT_PLACE].object != -1 ){
+        if ( d->player.map == CURRENT_PLACE + 1; ){
+            printf("Pegou o(a) %s que estava caido");
+            d->player.object = map[CURRENT_PLACE].object;
+        }
+    }
 }
 
 // Todo metodo para verificar se o tesouro está na sala 
@@ -471,7 +480,7 @@ void * thread1_player( void *ptr )
         
         diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;
         
-        if ( diffPlace ){
+        if ( diffPlace || !d->enemy[0].alive || !d->enemy[1].alive){
             chooseThePath( );
             printf("\n%s", map[CURRENT_PLACE].description);
             printf("\n%s\n", map[CURRENT_PLACE].info);
@@ -487,23 +496,28 @@ void * thread1_player( void *ptr )
         }
 
         if ( strcmp(op, "a") == 0 ){
-            while ( !diffPlace  ){ // para permanecer na luta enquanto houver a condição satisfeita
+            while ( (!diffPlace && d->enemy[0].alive) ){ // para permanecer na luta enquanto houver a condição satisfeita
                 
-                if ( d->enemy[1].alive ){ scanf("%s", op ); } //####################################//
+                //####################################//
                 
                 
                 if ( strcmp(op, "a") == 0 ){
-                    if ( d->player.map == d->enemy[0].map && d->enemy[0].alive ){ fight( d, 0 ); }
+                    if ( d->player.map == d->enemy[0].map && d->enemy[0].alive ){
+                        if ( d->enemy[0].alive ){ scanf("%s", op ); }
+                        fight( d, 0 ); 
+                    }
                     
-                    else if ( d->player.map == d->enemy[1].map && d->enemy[1].alive ) { fight( d, 1 ); }
-                    
-                }
+                    else if ( d->player.map == d->enemy[1].map && d->enemy[1].alive ) {
+                        if ( d->enemy[0].alive ){ scanf("%s", op ); }
+                        fight( d, 1 ); 
+                    }
+
                 diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;  
         
+                }
             }
         }
     }
- 
 }
 
 void *thread_giant( void *ptr ){
@@ -530,7 +544,7 @@ void  *thread_smoke( void *ptr )
     struct data *d = (struct data*)ptr;
     int pos;
 	
-    while( d->enemy[1].alive ){
+    while( d->enemy[0].alive ){
 
      pos = rand() % 8 + 1; // posição do monstro
      d->enemy[0].map = pos;
