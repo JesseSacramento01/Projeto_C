@@ -646,6 +646,3 @@ void  *thread_smoke( void *ptr )
   }
 }
 
-
-
-
