@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #include "extra.c"
- 
+
 
 #define MAX_NAME 100 
 #define INITIAL_PLAYER_ENERGY 60
@@ -18,7 +18,8 @@
 #define NO_WAY -1
 #define N_WEAPONS 5
 #define N_OF_ENEMIES 3
-#define MAXLIN 100
+#define MAXLIN 200
+#define INCREASE_ENERGY 30
 
 static int CURRENT_PLACE = 0;
 static char op[10];
@@ -93,14 +94,26 @@ void initializeEnemy( struct Enemy enemy[] );
 void initializeObjects( struct Object objects[] );
 char ** getInput( char *argv[] );
 void mapsInfo( );
-void setDescriptions();
+void setDescriptions( );
+void getCommands( );
 
 
 int main( int argc, char *argv[] ){
 
     
+    
     input = getInput( argv );
     argsC = argc;
+    	
+    if (argc == 5){
+        if ( atoi( input[0] ) != 9119 ){
+    	    printf( "Codigo Errado!\nAcesso ao super mode Negado!" );
+    	    exit( 0 );
+    	 }
+    }
+    
+    
+    
 
     struct Enemy enemy[2];
     struct Player player;
@@ -111,6 +124,8 @@ int main( int argc, char *argv[] ){
     initializeObjects( objects );
     initializeEnemy( enemy );
     setDescriptions();
+
+    getCommands( &player );
 
    
     
@@ -140,22 +155,31 @@ int main( int argc, char *argv[] ){
      pthread_join( thread1, NULL);
      pthread_join( thread2, NULL); 
      pthread_join( t_giant, NULL);
-	 
-	 
+ 
+    
      return 0;
 }
+/**
+ * Metodo recebe a struct player para apresentar o nome do player
+ * mostra os comandos que podem ser usados no jogo
+*/
+void getCommands( struct Player *player){
+    printf("\n\nBem vindo Player %s esses sao os comandos do Jogo:", player->name);
 
-void getCommands(){
-    printf("ir para Norte(n), Sul(s), Leste(l), Oeste(o), Cima(c), Baixo(b)\n");
+    printf("\n\nIr para Norte(n), Sul(s), Leste(l), Oeste(o), Cima(c), Baixo(b)\n");
     printf("Procurar Tesouro (p)\n");
     printf("Atacar (a)\n");
+    printf("Finalizar o Jogo (q)\n");
 }
 
+/**
+ * lê de um ficheiro as descrições de cada sala, e coloca no array da estrurura map
+*/
 void setDescriptions( ){
 
   int index = 0;
   FILE *f;
-  char l[MAXLIN;
+  char l[MAXLIN];
 
   f = fopen("descriptions.txt", "r");
   while( fgets(l, MAXLIN, f) != NULL ){
@@ -190,6 +214,7 @@ void initializePlayer( struct Player *player ){
     // object choosen in super mode
     player->object = atoi(input[3]);  
     }
+    
 }
 
 /**
@@ -199,7 +224,7 @@ void initializeObjects( struct Object object[]){
 
     strcpy(object[0].name, "Espada");
     strcpy(object[1].name, "Machado");
-    strcpy(object[2].name, "Arco_Flecha");
+    strcpy(object[2].name, "Arco&Flecha");
     
     object[0].power = 5;
     object[1].power = 7;
@@ -207,7 +232,9 @@ void initializeObjects( struct Object object[]){
 }
 
 
-// Todo colocar as informaçoes restantes nas outras cells
+/**
+ * Mostra as informações das possíveis passagens de uma sala para a outra
+*/
 void setInfo( ){
     //sala 1
     strcpy(map[0].info, "Ha passagens para o Norte, Sul e Leste\n");
@@ -222,7 +249,7 @@ void setInfo( ){
     //sala 6
     strcpy(map[5].info, "Ha passagens para o Sul e Oeste\n");
     //sala 7
-    strcpy(map[6].info, "Ha passagens para o Oeste\n");
+    strcpy(map[6].info, "Ha passagens para o Leste\n");
     //sala 8
     strcpy(map[7].info, "Ha passagens para o Sul, Leste, Oeste, e para Cima\n");
     //sala 9
@@ -244,13 +271,14 @@ void setInfo( ){
 
 }
 
-
+/**
+ * Lê de um ficheiro para atualizar as salas inserindo o caminho, tesouro, objecto
+*/
 void mapsInfo(){
 
   FILE *file;
-    char fileName[] = "file.txt";
+    char fileName[] = "mapfile.txt";
     char w[2];
-    int n;
 
     int i = 1;
     int j = 0;
@@ -267,13 +295,10 @@ void mapsInfo(){
     while( fscanf( file, "%s", w ) != EOF ){
         
         initializeMap( i, j, atoi(w) );
-        
-        
+    
         if ( i == 8){
-            printf("%d\n", atoi(w)); 
             j++;
             i = 0;
-            printf("j: %d\n", j);
     }  
     i++;
   }
@@ -287,6 +312,10 @@ void mapsInfo(){
    
 }
 
+/**
+ * recebe como parametro o i que é a quantidade de membros da structura map, e j que é o indice, e inf que
+ * é a informação que vem a aprtir de um ficheiro 
+*/
 void initializeMap ( int i, int j, int inf )
 {
         switch (i)
@@ -320,6 +349,9 @@ void initializeMap ( int i, int j, int inf )
         }
 };
 
+/**
+ * recebe a struct Enemy para inicializar os seus membros
+*/
 void initializeEnemy (struct Enemy enemy[])
 {
 
@@ -339,11 +371,14 @@ void initializeEnemy (struct Enemy enemy[])
     enemy[1].alive = true;
 
 }
-
+/**
+ * Para guaiar o utilizador e mostrar para one pode ir, atualiza também a posição atual
+*/
 void chooseThePath(  ){
     // usar o x para marcar a posição atual do jogador
-        // verifica se a direção escolhida pelo player está disponívels
-
+        // verifica se a direção escolhida pelo player está disponível
+  
+			
         if ( strcmp(op, "n") == 0  && map[CURRENT_PLACE].north != -1){
             printf("Porta ao Norte Entrando...\n");
             // Current_Place recebe o valor da sala a seguir
@@ -379,11 +414,18 @@ void chooseThePath(  ){
         else{
             printf("Este Caminho esta Bloqueado!\n");
         }
+        
     
 }
 
-// Todo metodo para fazer player lutar com o Monstro
 
+
+
+/**
+ * recebe data que posui as estruturas do enemy do player e do object e um int que diz qual dos monstros é
+ * o que o player está atacando 
+ * Método usado pela thread do Player
+*/
 void fight( struct data *d, int e ){
     int restLife = d->enemy[e].energy - d->objects[e].power;
     d->enemy[e].energy = restLife;
@@ -414,12 +456,16 @@ void fight( struct data *d, int e ){
  
 }
 
-// Todo metodo para fazer o Monstro Atacar
 
+/**
+ * recebe data que posui as estruturas do enemy do player e do object e um int que diz qual dos monstros é
+ * o que o player está atacando
+ * Metodo que é usado pela thread do Monstro
+*/
 void enemyAttack( struct data *d, int e ){
     while ( d->enemy[e].energy > 0 && d->enemy[e].map == d->player.map && d->player.energy > 0){
     d->player.energy = d->player.energy - d->enemy[e].power;
-    printf("energy: %d\n", d->player.energy);
+    printf("Sua Energia: %d\n", d->player.energy);
     printf("O Monstro %s deu um golpe\n", d->enemy[e].name);
     sleep(2);
     
@@ -432,19 +478,48 @@ void enemyAttack( struct data *d, int e ){
     }
 }
 
-// Todo metodo para verificar se há uma arma na sala
-
-void getWeapon( struct data d){
-    if ( map[CURRENT_PLACE].object != -1 ){
-        if ( d->player.map == CURRENT_PLACE + 1; ){
-            printf("Pegou o(a) %s que estava caido");
-            d->player.object = map[CURRENT_PLACE].object;
-        }
+/**
+* Metodo que verifica se os monstros foram mortos, e o tespuro foi achado
+* Caso se verifique esta condição o jogo termina.
+*/
+void endGame( struct data *d ){
+	if ( !d->enemy[0].alive && !d->enemy[1].alive && d->player.treasure == 1 ){
+	 printf("Missão Cumprida!\nrecuperou o tesouro e derrotou os monstros!");
+	 printf("O seu reino agradece guerreiro %s", d->player.name);
+	 exit(0);
+	 
     }
 }
 
-// Todo metodo para verificar se o tesouro está na sala 
 
+/**
+ * Método Para apanhar uma arma
+ * recebe a struct data como parametro para ter acesso ao player
+*/
+void getWeapon( struct data *d ){
+    char c;
+    if ( map[CURRENT_PLACE].object != -1 ){
+        if ( d->player.map == CURRENT_PLACE + 1 ){
+                if ( d->player.object != -1){
+                    printf("Largou o(a) %s e apanhou o(a) %s\n", d->objects[d->player.object].name,
+                    d->objects[map[CURRENT_PLACE].object].name);
+                    d->player.object = map[CURRENT_PLACE].object;
+                }
+                else {
+                    printf("Pegou o(a) %s que estava caido\n", d->objects[map[CURRENT_PLACE].object].name);
+                    d->player.object = map[CURRENT_PLACE].object;
+                }
+                
+            }
+            
+        }
+    }
+
+
+/**
+ * Metodo para procurar pelo tesouro, caso encontre atualiza o membro da struct 
+ * do player colocando treasure a 1
+*/
 void searchTreasure( struct data *d ){
     if ( strcmp(op, "p") == 0){
         printf("Procurando...\n");
@@ -454,14 +529,22 @@ void searchTreasure( struct data *d ){
         printf("Encontrou O tesouro!\n");
         d->player.treasure = 1;
     }
-    else{
+
+     if ( CURRENT_PLACE == 2 || CURRENT_PLACE == 7 || CURRENT_PLACE == 10 ){
+    	printf("Encontrou uma pocao ganhou mais 30 de energia\n");
+        d->player.energy = d->player.energy + INCREASE_ENERGY;	
+     } 
+    
+     else{
         printf("\nNao ha nenhum tesouro!\n");
     } 
 }
    
 }
 
-
+/**
+ * Função da thread responsável por receber comandos do player
+*/
 void * thread1_player( void *ptr )
 { 
     bool diffPlace = false; // variavel que diz se jogadores estão na mesma sala
@@ -478,6 +561,7 @@ void * thread1_player( void *ptr )
         
         scanf( "%s", op );
         
+        endGame( d ); // verifica se é o fim do jogo
         diffPlace = d->player.map != d->enemy[0].map && d->player.map != d->enemy[1].map;
         
         if ( diffPlace || !d->enemy[0].alive || !d->enemy[1].alive){
@@ -488,6 +572,7 @@ void * thread1_player( void *ptr )
             mais um por conta do indice, Não
             há sala 0*/
             d->player.map = CURRENT_PLACE + 1;
+            getWeapon( d );
         }
 
         // caso a opção seja o p, o entra na função para procurar o tesouro
@@ -497,9 +582,6 @@ void * thread1_player( void *ptr )
 
         if ( strcmp(op, "a") == 0 ){
             while ( (!diffPlace && d->enemy[0].alive) ){ // para permanecer na luta enquanto houver a condição satisfeita
-                
-                //####################################//
-                
                 
                 if ( strcmp(op, "a") == 0 ){
                     if ( d->player.map == d->enemy[0].map && d->enemy[0].alive ){
@@ -518,15 +600,18 @@ void * thread1_player( void *ptr )
             }
         }
     }
+    exit(0); // finaliza o jogo se o char q for detectado
 }
-
+/**
+ * Função do Monstro Giant, responsável por movimentar e fazer ações deste monstro
+*/
 void *thread_giant( void *ptr ){
     //Gigante
     struct data *d = (struct data*)ptr;
     int gPos;
      
      while( d->enemy[0].alive ){
-        gPos = rand() % 9 + 8;
+        gPos = rand() % 8 + 9;
         d->enemy[1].map = gPos;
         //printf("O Monstro %s esta na sala %d\n", d->enemy[1].name, d->enemy[1].map);
         if ( d->player.map == d->enemy[1].map && d->enemy[1].energy > 0){
@@ -537,6 +622,9 @@ void *thread_giant( void *ptr ){
     } 
 }
 
+/**
+ * Função do Monstro Smoke, responsável por movimentar e fazer ações deste monstro
+*/
 void  *thread_smoke( void *ptr )
 {
     // variavel que mostra se o monstro está vivo ou não
