@@ -1,0 +1,16 @@
+Estas na entrada do castelo, e aqui comeca a aventura.
+Estas na sala 2 cuidado neste terreno pode haver um monstro.
+Estas na sala 3 um lugar escuro e isolado tenha cuidado.
+Estas na sala 4 pode-se sentir o cheiro do monstro de longe.
+Estas na sala 5 o tesouro pode estar aqui, procura-lo seria uma boa ideia.
+Estas na sala 6 uma sala suja e cheia de aranhas, mas fique tranquilo, as aranhas nao podem matar-te.
+Estas na sala 7 Uma sala vazia sem muitos objectos, sera que o tesouro esta aqui?
+Estas na sala 8 Parece que ao fundo do corredor ha uma escada. 
+Estas na sala 9 Primeira sala do andar de cima, tenha cuidado ha um monstro gigante por ai!
+Estas na sala 10 Ao fundo observa-se o esqueleto do guerreiro que tentou enfrentar este monstro!
+Estas na sala 11 Talvez o Tesouro esteja aqui.
+Estas na sala 12 Uma sala muito Escura, mas ha um brilho, parece que vem de uma das portas.
+Estas na sala 13 Esta sala tem um cheiro horrivel, mais esqueletos de guerreiros que fracassaram em sua missão.
+Estas na sala 14 Pode ser que o tesouro esteja aqui, O monstro costuma a passear por aqui, cuidado!
+Estas na sala 15 O Monstro passou por aqui.
+Estas na sala 16 Larga, cheia de espaco, ao olhar pela janela te permite ver como esta o tempo la fora, que horrivel que esta.
