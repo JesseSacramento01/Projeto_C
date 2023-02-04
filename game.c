@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdbool.h>
-
 #include "extra.c"
  
 
@@ -121,7 +120,7 @@ int main( int argc, char *argv[] ){
      
      strcpy(op, "" );
 
-     //criação de duas threads, cada um com a sua função
+     //criação de três threads, cada um com a sua função
      pthread_create( &thread1, NULL, thread1_player, (void*) &d);
      pthread_create( &thread2, NULL, thread_smoke, (void*) &d);
      pthread_create( &t_giant, NULL,  thread_giant, (void*) &d);
@@ -383,7 +382,7 @@ void chooseThePath(  ){
 // Todo metodo para fazer player lutar com o Monstro
 
 void fight( struct data *d, int e ){
-    int restLife = d->enemy[e].energy - d->objects[e].power;
+    int restLife = d->enemy[e].energy - d->objects[e].power; //vida restante do monstro
     d->enemy[e].energy = restLife;
     
     if ( d->enemy[e].energy > 0 ){ printf("Energia do Monstro: %d\n", d->enemy[e].energy); }
@@ -543,4 +542,3 @@ void  *thread_smoke( void *ptr )
      sleep( 2 );  
   }
 }
-

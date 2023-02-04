@@ -1,0 +1,21 @@
+function PortugueseToLower( s ){
+
+  ls = tolower( s );
+
+  gsub( first, secound, ls ); 
+  
+  
+  return ls;
+}
+
+BEGIN{ 
+	RS="[.:;?!]+"; 
+}
+
+( $0 ~ /^[-A-Za-záéíóúÁÉÍÓÚàÀâÂêÊôÔãÃõÕçÇ]+$/ ) && ( $0 !~ /\-\-/)
+
+{
+ 	palavra = PortugueseToLower( $0 ); 	
+  	print palavra
+  	
+}
